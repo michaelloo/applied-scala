@@ -32,9 +32,33 @@ class AppRuntime(config: Config, httpClient: Client[IO], contextShift: ContextSh
     new FetchAllMoviesController(fetchAllMoviesService.fetchAll)
   }
 
+  private val fetchMovieController: FetchMovieController = {
+    val fetchMovieService: FetchMovieService = new FetchMovieService(pgsqlRepo.fetchMovie)
+    new FetchMovieController(fetchMovieService.fetch)
+  }
+
+  private val fetchEnrichedMovieController: FetchEnrichedMovieController = {
+    val metascoreRepository = new Http4sMetascoreRepository(httpClient, config.omdbApiKey)
+    val fetchEnrichedMovieService: FetchEnrichedMovieService = new FetchEnrichedMovieService(pgsqlRepo.fetchMovie, metascoreRepository.apply)
+    new FetchEnrichedMovieController(fetchEnrichedMovieService.fetch)
+  }
+
+  private val saveMovieController: SaveMovieController = {
+    val saveMovieService: SaveMovieService = new SaveMovieService(pgsqlRepo.saveMovie)
+    new SaveMovieController(saveMovieService.save)
+  }
+
+  private val saveReviewController: SaveReviewController = {
+    val saveReviewService: SaveReviewService = new SaveReviewService(pgsqlRepo.saveReview, pgsqlRepo.fetchMovie)
+    new SaveReviewController(saveReviewService.save)
+  }
+
   private val appRoutes = new AppRoutes(
     fetchAllMoviesHandler = fetchAllMoviesController.fetchAll,
-    saveMovieHandler = _ => IO(Response[IO](status = Status.NotImplemented))
+    fetchMovieHandler = fetchMovieController.fetch,
+    fetchEnrichedMovieHandler = fetchEnrichedMovieController.fetch,
+    saveMovieHandler = saveMovieController.save,
+    saveReviewHandler = saveReviewController.save
   )
 
   /*

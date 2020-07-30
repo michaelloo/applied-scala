@@ -12,6 +12,8 @@ class SaveMovieService(saveMovie: ValidatedMovie => IO[MovieId]) {
     * Complete `NewMovieValidator`, then use it here before calling `saveMovie`.
     */
   def save(newMovieReq: NewMovieRequest): IO[ValidatedNel[MovieValidationError, MovieId]] =
-    ???
-
+    NewMovieValidator.validate(newMovieReq) match {
+      case Validated.Valid(a) => saveMovie(a).map(Validated.validNel)
+      case Validated.Invalid(e) => IO.pure(Validated.Invalid(e))
+    }
 }

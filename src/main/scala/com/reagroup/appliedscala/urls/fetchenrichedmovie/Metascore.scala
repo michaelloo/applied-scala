@@ -3,6 +3,7 @@ package com.reagroup.appliedscala.urls.fetchenrichedmovie
 import io.circe.Decoder.Result
 import io.circe.{Decoder, DecodingFailure, Encoder, HCursor}
 import io.circe.generic.semiauto._
+import io.circe.syntax._
 
 case class Metascore(value: Int)
 
@@ -14,11 +15,11 @@ object Metascore {
     * Convert:
     *
     * {
-    *   ..
-    *   ..
-    *   "Metascore": "75",
-    *   ..
-    *   ..
+    * ..
+    * ..
+    * "Metascore": "75",
+    * ..
+    * ..
     * }
     *
     * into:
@@ -26,4 +27,12 @@ object Metascore {
     * `Metascore(75)`
     */
 
+  implicit val decoder: Decoder[Metascore] = (c: HCursor) => {
+    for {
+      value <- c.get[Int]("Metascore")
+    } yield Metascore(value)
+  }
+
+//  implicit val encoder: Encoder[Metascore] = Encoder[Int].contramap(metascore => metascore.value)
+  implicit val encoder: Encoder[Metascore] = Encoder.instance(metascore => metascore.value.asJson)
 }

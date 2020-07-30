@@ -1,7 +1,7 @@
 package com.reagroup.exercises.validated
 
-import cats.data.Validated
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
 
 /**
@@ -38,7 +38,8 @@ object ValidationExercises {
     * Hint: Use the `.invalidNel` and `.validNel` combinators
     */
   def nameValidation(name: String, label: String): ValidatedNel[ValidationError, String] =
-    ???
+    if (name.isEmpty) Validated.invalidNel(NameIsEmpty(label))
+    else Validated.validNel(name)
 
   /**
     * If the `password` does not contain a numeric character, return a `PasswordTooWeak`.
@@ -48,7 +49,8 @@ object ValidationExercises {
     * Hint: Use `password.exists(Character.isDigit)`
     */
   def passwordStrengthValidation(password: String): ValidatedNel[ValidationError, String] =
-    ???
+    if (password.exists(Character.isDigit)) Validated.validNel(password)
+    else Validated.invalidNel(PasswordTooWeak)
 
   /**
     * If the `password` length is not greater than 8 characters, return `PasswordTooShort`.
@@ -56,14 +58,15 @@ object ValidationExercises {
     * Otherwise, return the `password`.
     */
   def passwordLengthValidation(password: String): ValidatedNel[ValidationError, String] =
-    ???
+    if (password.length >= 8) Validated.validNel(password)
+    else Validated.invalidNel(PasswordTooShort)
 
   /**
     * Compose `passwordStrengthValidation` and `passwordLengthValidation` using Applicative `productR`
     * to construct a larger `passwordValidation`.
     */
   def passwordValidation(password: String): ValidatedNel[ValidationError, String] =
-    ???
+    passwordStrengthValidation(password).productR(passwordLengthValidation(password))
 
   /**
     * Compose `nameValidation` and `passwordValidation` to construct a function to `validatePerson`.
@@ -71,7 +74,11 @@ object ValidationExercises {
     * Take a look at `.mapN` for this one, to map a tuple of ValidatedNels to a singular ValidatedNel
     */
   def validatePerson(firstName: String, lastName: String, password: String): ValidatedNel[ValidationError, Person] =
-    ???
+    (
+      nameValidation(firstName, "firstName"),
+      nameValidation(lastName, "lastName"),
+      passwordValidation(password)
+    ).mapN((firstName, lastName, password) => Person(firstName, lastName, password))
 
 
   /**
@@ -82,6 +89,5 @@ object ValidationExercises {
   type LastName = String
   type Password = String
   def validatePeople(inputs: List[(FirstName, LastName, Password)]): ValidatedNel[ValidationError, List[Person]] =
-    ???
-
+    inputs.traverse(input => validatePerson(input._1, input._2, input._3))
 }
